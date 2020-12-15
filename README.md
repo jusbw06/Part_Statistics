@@ -48,7 +48,7 @@ The program comes with a number of internal functions accessible by a terminal i
 
 `build_model`: This function forks up to `MAX_THREAD` `tdms_readlayer` processes. These processes read the `tdms` files pointed to by the working 3D printer sernsor data directory and adds the data to the programs internal 3D model. Note, each `tdms_layer` process consumes its own amount of memory. Setting `MAX_THREAD` to too high a value will cause very high memory consumption at performance cost. I recommend settings `MAX_THREAD` to a value no greater than the number of cores on your CPU. This build process will take some time.  
 
-`save_model`: This function will save your program's 3D model to disk in a file equivalent to whatever was specified by the `MODEL_MEM_SIZE_GB` setting.  
+`save_model`: This function will save your program's 3D model to disk in a file with a size equivalent to whatever was specified by the `MODEL_MEM_SIZE_GB` setting.  
 
 `load_model`: This function loads a particular model save file from disk into memory. this is especially helpful to bypass the excessive wait time imposed by running `build_model`.  
 
