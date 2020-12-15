@@ -66,12 +66,12 @@ int saveToFile(void* shm_ptr, unsigned long mem_size, int verbose){
 		remainder = mem_size%INT_MAX;
 
 		if (num_writes > 0){
-			if ( (bytes_written = pwrite64(fd, shm_ptr, INT_MAX, total_bytes_written)) < 0){
+			if ( (bytes_written = pwrite64(fd, shm_ptr + total_bytes_written, INT_MAX, total_bytes_written)) < 0){
 				fprintf(stderr,"Error writing to file\n");
 			}
 			mem_size -= INT_MAX;
 		}else{
-			if ( (bytes_written = pwrite64(fd, shm_ptr, remainder, total_bytes_written)) < 0){
+			if ( (bytes_written = pwrite64(fd, shm_ptr + total_bytes_written, remainder, total_bytes_written)) < 0){
 				fprintf(stderr,"Error writing to file\n");
 			}
 		}
@@ -107,12 +107,12 @@ int readFromFile(void* shm_ptr, unsigned long mem_size, int verbose){
 		remainder = mem_size%INT_MAX;
 
 		if (num_reads_left > 0){
-			if ( (bytes_read = pread64(fd, shm_ptr, INT_MAX, total_bytes_read)) < 0){
+			if ( (bytes_read = pread64(fd, shm_ptr + total_bytes_read, INT_MAX, total_bytes_read)) < 0){
 				fprintf(stderr,"Error reading from file\n");
 			}
 			mem_size -= INT_MAX;
 		}else{
-			if ( (bytes_read = pread64(fd, shm_ptr, remainder, total_bytes_read)) < 0){
+			if ( (bytes_read = pread64(fd, shm_ptr + total_bytes_read, remainder, total_bytes_read)) < 0){
 				fprintf(stderr,"Error reading from file\n");
 			}
 		}
