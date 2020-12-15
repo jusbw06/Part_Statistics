@@ -50,7 +50,7 @@ The program comes with a number of internal functions accessible by a terminal i
 
 `save_model`: This function will save your program's 3D model to disk in a file with a size equivalent to whatever was specified by the `MODEL_MEM_SIZE_GB` setting.  
 
-`load_model`: This function loads a particular model save file from disk into memory. this is especially helpful to bypass the excessive wait time imposed by running `build_model`.  
+`load_model`: This function loads a particular model save file from disk into memory. This is especially helpful to bypass the excessive wait time imposed by running `build_model`.  
 
 `plot`: This function plots the internal 3D model for visualization. See the following section for more information.  
 
