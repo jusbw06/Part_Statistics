@@ -1,5 +1,8 @@
 ## Part_Stat  
-For Visualization of 3D Printer Sensor Data in 3D space
+For Visualization of 3D Printer Sensor Data in 3D space  
+
+![Example Plot](pics/model.png)
+
 
 #### Minimum Requirements:  
 In order to use this software, you must be on a Linux computer with the packages `gnuplot` and `libconfig` installed via your operating system's package manager. This repository comes with a contains a copy of `libtdms`. See [https://iondev.ro/tdms/](https://iondev.ro/tdms/) for more information.
