@@ -5,7 +5,7 @@ For Visualization of 3D Printer Sensor Data in 3D space
 
 
 #### Minimum Requirements:  
-In order to use this software, you must be on a Linux computer with the packages `gnuplot` and `libconfig` installed via your operating system's package manager. This repository comes with a contains a copy of `libtdms`. See [https://iondev.ro/tdms/](https://iondev.ro/tdms/) for more information.
+In order to use this software, you must be on a Linux computer with the packages `gnuplot` and `libconfig` installed via your operating system's package manager. This repository contains a copy of `libtdms`. See [https://iondev.ro/tdms/](https://iondev.ro/tdms/) for more information.
 
 #### Using the Program:
 To compile this program, change into the downloaded repository's root directory and type:  
