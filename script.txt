@@ -1,0 +1,7 @@
+init_mem
+zero_model
+build_model
+save_model
+load_model
+plot
+exit
