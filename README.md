@@ -1,4 +1,4 @@
-## GUI_STAT -- Visual Application
+## GUI_STAT -- Graphical User Application
 For Visualization of 3D Printer Sensor Data in 3D space. A Wrapper for Part_Stat.  
 
 #### Minimum Requirements:  
