@@ -1,4 +1,13 @@
-## Part_Stat  
+## GUI_STAT -- Visual Application
+For Visualization of 3D Printer Sensor Data in 3D space. A Wrapper for Part_Stat.  
+
+#### Minimum Requirements:  
+In order to use this program, you must also have `OpenGL`, `glad` - the open source OpenGL loader, and `gtk3` installed on your system. Because this is a wrapper for the `part_stat` backend, you must satisfy all of the `part_stat` system requirements as well and have it installed in the same parent directory.
+
+![Application View](pics/gui_stat-window-view.png)
+
+
+## Part_Stat -- Terminal Application  
 For Visualization of 3D Printer Sensor Data in 3D space  
 
 ![Example Plot](pics/model.png)
