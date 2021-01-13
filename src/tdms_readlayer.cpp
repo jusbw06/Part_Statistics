@@ -1,35 +1,44 @@
 #define MAIN 1
 
-#include"TdmsParser.h"
-#include"TdmsGroup.h"
-#include"TdmsChannel.h"
-#include<string.h>
-#include<cstdlib>
-#include<stdio.h>
-#include<sys/shm.h>
-#include<sys/ipc.h>
-#include<unistd.h>
-#include<stdlib.h>
-#include<sys/types.h>
-#include<sys/stat.h>
-#include<fcntl.h>
-#include<errno.h>
+#include "TdmsParser.h"
+#include "TdmsGroup.h"
+#include "TdmsChannel.h"
+#include <string.h>
+#include <cstdlib>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 
-#include"globalVars.h"
-#include"model.h"
-#include"settings.h"
+#include "globalVars.h"
+#include "model.h"
+#include "settings.h"
+#include "file.h"
 
 
-void appendToLoc(int x_loc, int y_loc, int z_loc, double area, double intensity, double ratio, struct node *model){
+void appendToLoc(int x_loc, int y_loc, int z_loc, double area, double intensity, double ratio, struct app_data* data){
 
-	struct node val = getNode(z_loc, x_loc, y_loc, model);
+	if (data->model_type == largeFile || data->model_type == _default){
 
-	val.area += area * ratio;
-	val.area_num_elements += ratio;
-	val.intensity += intensity * ratio;
-	val.intensity_num_elements += ratio;
+		struct node val;
+		model_getVal(z_loc, x_loc, y_loc, &val, data->model_type); //
 
-	setNode(z_loc, x_loc, y_loc, model, val);
+		val.area += area * ratio;
+		val.intensity += intensity * ratio;
+		val.num_elements += ratio;
+
+		model_setVal(z_loc, x_loc, y_loc, &val, data->model_type); //
+	}
+
+	if (data->model_type == bitArray){
+
+		uint8_t one = 1;
+		model_setVal(z_loc, x_loc, y_loc, &one, data->model_type); //
+
+	}
 
 }
 
@@ -40,16 +49,15 @@ void appendToLoc(int x_loc, int y_loc, int z_loc, double area, double intensity,
 #define INTENSITY 4
 
 #define MU 119170
+void interpolateAndAppend(double x, double y, double z, double area, double intensity, struct app_data* data){
 
-void interpolateAndAppend(double x, double y, double z, double area, double intensity, struct node* model){
+	int x_grid_loc = int( (double) (x + MU) / data->MICRONS_PER_SEG);
+	int y_grid_loc = int( (double) (y + MU) / data->MICRONS_PER_SEG);
+	int z_grid_loc = int( (double) z / data->MICRONS_PER_SEG);
 
-	int x_grid_loc = int( (double) (x + MU) / MICRONS_PER_SEG);
-	int y_grid_loc = int( (double) (y + MU) / MICRONS_PER_SEG);
-	int z_grid_loc = int( (double) z / MICRONS_PER_SEG);
-
-	double x_rem = (double) (x + MU) / MICRONS_PER_SEG - x_grid_loc;
-	double y_rem = (double) (y + MU) / MICRONS_PER_SEG - y_grid_loc;
-	double z_rem = (double) z / MICRONS_PER_SEG - z_grid_loc;
+	double x_rem = (double) (x + MU) / data->MICRONS_PER_SEG - x_grid_loc;
+	double y_rem = (double) (y + MU) / data->MICRONS_PER_SEG - y_grid_loc;
+	double z_rem = (double) z / data->MICRONS_PER_SEG - z_grid_loc;
 	// remainder should be % of 1 already
 
 	int xs[8] = {0, 0, 1, 1, 0, 0, 1, 1};
@@ -75,7 +83,7 @@ void interpolateAndAppend(double x, double y, double z, double area, double inte
 			z_rat = z_rem;
 
 		double vol = x_rat*y_rat*z_rat; // from [0, 1]
-		appendToLoc(x_grid_loc + xs[i], y_grid_loc + ys[i], z_grid_loc + zs[i], area, intensity, vol, model);
+		appendToLoc(x_grid_loc + xs[i], y_grid_loc + ys[i], z_grid_loc + zs[i], area, intensity, vol, data);
 
 
 	}
@@ -85,7 +93,7 @@ void interpolateAndAppend(double x, double y, double z, double area, double inte
 }
 
 // ------> parallelize this <--------
-void buildFromLayer(int slice_num, int* verbose, struct node* model){
+void buildFromLayer(int slice_num, int* verbose, struct app_data* data){
 
 	char file_name[100];
 	int storeValues = true;
@@ -160,7 +168,7 @@ void buildFromLayer(int slice_num, int* verbose, struct node* model){
 			}
 
 			// interp here
-			interpolateAndAppend(data_x.at(n) * 10, data_y.at(n) * 10, slice_num * 50, data_area.at(n), data_int.at(n), model);
+			interpolateAndAppend(data_x.at(n) * 6, data_y.at(n) * 6, slice_num * 50, data_area.at(n), data_int.at(n), data);
 
 		}
 
@@ -175,64 +183,49 @@ void buildFromLayer(int slice_num, int* verbose, struct node* model){
 
 }
 
-int attachToSharedMem(void** shm_ptr, int* mem_id){
-
-	/* Find Shared Memory ID */
-	*mem_id = shmget(SHM_KEY, 0, 0);
-	if (*mem_id == -1){
-		switch (errno){
-		default:
-			fprintf(stderr,"Child: Error Finding Shared Memory Segment\n");
-		}
-		return 1;
-	}
-	// Attach to the segment to get a pointer to it.
-	*shm_ptr = (struct shmseg*) shmat(*mem_id, NULL, 0);
-	if (*shm_ptr == (void*) -1){
-		fprintf(stderr, "Child: Failed to Attach Memory Segment\n");
-		return 1;
-	}
-
-	return 0;
-}
 
 int main(int argc, char *argv[]){
 
+
+	struct app_data data;
 	int slice_num;
+	int model_type;
 
 	if (argc < 2){
 		fprintf(stderr,"Child: Missing Slice Number Argument\n");
 		return 1;
 	}
 
+	if (argc < 3){
+		fprintf(stderr,"Child: Missing Model Type Argument\n");
+		return 1;
+	}
+
 	slice_num = atoi(argv[1]);
 	if (slice_num == 0){
-		fprintf(stderr, "Child: Invalid Number\n");
+		fprintf(stderr, "Child: Invalid Slice Number\n");
 		return 1;
 	}
-
-	struct node* shm_ptr = NULL;
-	int mem_id;
-
-	updateGlobalVariables("../SETTINGS.cfg", 0);
-
-	if ( attachToSharedMem( (void**) &shm_ptr, &mem_id) != 0){
-		fprintf(stderr, "Child: Failed to Attach to Shared Memory Segment\n");
+	model_type = atoi(argv[2]);
+	if (model_type < 0 || model_type > 2){
+		fprintf(stderr, "Child: Invalid Model Type\n");
 		return 1;
 	}
+	data.model_type = model_type;
+	data.resolution = 50;
 
+	//fprintf(stderr, "model_type: %d", data.model_type);
+
+	updateGlobalVariables("../SETTINGS.cfg", &data, 0);
+	model_init(&data, 0); // create if part_stat
 
 	// Read And Append Values
 	int verbosity[] = {0,0,0};
-	buildFromLayer(slice_num, verbosity, shm_ptr);
+	buildFromLayer(slice_num, verbosity, &data);
 
 
 	/* Detach Shared Memory */
-	// Detach
-	if (shmdt(shm_ptr) == -1) {
-	  fprintf(stderr,"Child: Failed to detach Memory Segment");
-	  return 1;
-	}
+	model_free(&data, 0);
 
 
 	return 0;

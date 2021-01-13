@@ -1,7 +1,9 @@
-init_mem
-zero_model
+update_variable model_type 0
+update_variable resolution 50
+print_model_stats
+create_model
+clear_model
 build_model
 save_model
-load_model
-plot
+free_model
 exit

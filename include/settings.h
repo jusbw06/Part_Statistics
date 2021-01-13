@@ -1,1 +1,2 @@
-void updateGlobalVariables(const char* filename, int verbose);
+#include "globalVars.h"
+void updateGlobalVariables(const char* filename, struct app_data* data, int verbose);

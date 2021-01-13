@@ -4,8 +4,8 @@
 #include"model.h"
 
 
-// GNU PLOT
-void plotData(struct node* model, int layer_num){
+// GNU PLOT -- broken
+void plotData(struct app_data* data, int layer_num){
 
 	const char* name = (char*) "Area Color Plot";
 	// open persistent gnuplot window
@@ -15,7 +15,7 @@ void plotData(struct node* model, int layer_num){
 	fprintf(gnuplot_pipe, "set title '%s'\n", name);
 
 	// fill it with data
-	struct node val;
+	struct node val; //need be different data-type
 	FILE* temp_file = fopen64("../tmp/plot_data.txt","w");
 	if (temp_file == NULL){
 		fprintf(stderr, "Unable to create/open file\n");
@@ -23,12 +23,12 @@ void plotData(struct node* model, int layer_num){
 		return;
 	}
 
-	for (int k = 0; k <= Z_DIM; k+=10){
-		for(int i = 0; i < X_DIM; i++){
-			for (int j = 0; j < Y_DIM; j++){
-				val = getNode(k, i, j, model);
+	for (int k = 0; k <= data->Z_DIM; k+=10){
+		for(int i = 0; i < data->X_DIM; i++){
+			for (int j = 0; j < data->Y_DIM; j++){
+				model_getVal(k, i, j, &val, _default);
 				if (val.area > 0.1){
-					fprintf(temp_file, "%i %i %i %g\n", i, j, k, val.area);
+					fprintf(temp_file, "%d %d %d %g\n", i, j, k, val.area);
 				}
 			}
 		}

@@ -5,12 +5,44 @@
 #include<unistd.h>
 #include<errno.h>
 #include<limits.h>
+#include <stdint.h>
 
 #include "globalVars.h"
 
-int createSharedMem(void** shm_ptr, int* mem_id, unsigned long mem_size){
+const char* save_file = "/run/media/justi/Ext 2/saves/model.sav";
+
+void detachSharedMem(void* shm_ptr){
+	/* Detach Shared Memory */
+	if (shmdt(shm_ptr) == -1) {
+	  fprintf(stderr,"Child: Failed to detach Memory Segment");
+	}
+}
+
+
+int attachToSharedMem(void** shm_ptr, int* mem_id, int shm_key){
+
+	/* Find Shared Memory ID */
+	*mem_id = shmget(shm_key, 0, 0);
+	if (*mem_id == -1){
+		switch (errno){
+		default:
+			fprintf(stderr,"Child: Error Finding Shared Memory Segment\n");
+		}
+		return 1;
+	}
+	// Attach to the segment to get a pointer to it.
+	*shm_ptr = (struct shmseg*) shmat(*mem_id, NULL, 0);
+	if (*shm_ptr == (void*) -1){
+		fprintf(stderr, "Child: Failed to Attach Memory Segment\n");
+		return 1;
+	}
+
+	return 0;
+}
+
+int createSharedMem(void** shm_ptr, int* mem_id, int shm_key, uint64_t mem_size){
 	/* Create Shared Memory */
-	*mem_id = shmget(SHM_KEY, mem_size, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH | IPC_CREAT );//| IPC_EXCL);
+	*mem_id = shmget(shm_key, mem_size, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH | IPC_CREAT );//| IPC_EXCL);
 	if (*mem_id == -1){
 		switch (errno){
 		case EEXIST:
@@ -31,24 +63,23 @@ int createSharedMem(void** shm_ptr, int* mem_id, unsigned long mem_size){
 }
 
 
-int destroySharedMem(void* shm_ptr, int mem_id){
+void destroySharedMem(void* shm_ptr, int mem_id){
 
 	/* Destroy Shared Memory */
 	// Detach
 	if (shmdt(shm_ptr) == -1) {
 	  fprintf(stderr,"Failed to detach Memory Segment\n");
-	  return 1;
 	}
+
 	if (shmctl(mem_id, IPC_RMID, 0) == -1) {
 	  fprintf(stderr,"Failed to mark memory Segment for Destruction\n");
-	  return 1;
 	}
-	return 0;
+
 }
 
 int saveToFile(void* shm_ptr, unsigned long mem_size, int verbose){
 
-	const char* file_name = "../saves/model.sav";
+	const char* file_name = save_file;
 	int fd;
 	fd = open64(file_name, O_CREAT | O_TRUNC | O_WRONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 	if (fd < 0){
@@ -78,6 +109,7 @@ int saveToFile(void* shm_ptr, unsigned long mem_size, int verbose){
 		total_bytes_written += bytes_written;
 		if (verbose){
 			fprintf(stdout,"Wrote %d Bytes\n", bytes_written);
+			fflush(stdout);
 		}
 
 	}
@@ -89,7 +121,7 @@ int saveToFile(void* shm_ptr, unsigned long mem_size, int verbose){
 
 int readFromFile(void* shm_ptr, unsigned long mem_size, int verbose){
 
-	const char* file_name = "../saves/model.sav";
+	const char* file_name = save_file;
 	int fd;
 	fd = open64(file_name, O_RDONLY | O_LARGEFILE, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 	if (fd < 0){
@@ -119,6 +151,7 @@ int readFromFile(void* shm_ptr, unsigned long mem_size, int verbose){
 		total_bytes_read += bytes_read;
 		if (verbose){
 			fprintf(stdout,"Read %d Bytes\n", bytes_read);
+			fflush(stdout);
 		}
 
 	}

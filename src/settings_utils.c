@@ -6,8 +6,9 @@
 
 #define MU 119170
 
-int refreshValues(config_t* cfg_ptr, int verbose){
-	int* globalAddresses[] = {&MAX_THREAD, &X_DIM, &Y_DIM, &Z_DIM, &SHM_KEY, &MODEL_MEM_SIZE_GB, &NUM_SLICES};
+#define ADDR(x) &(data->x)
+int refreshValues(config_t* cfg_ptr, struct app_data* data, int verbose){
+	int* globalAddresses[] = { ADDR(MAX_THREAD), ADDR(X_DIM), ADDR(Y_DIM), ADDR(Z_DIM), ADDR(SHM_KEY), ADDR(MODEL_MEM_SIZE_GB), ADDR(NUM_SLICES)};
 	const char* keysv[] = {"MAX_THREAD", "X_DIM", "Y_DIM", "Z_DIM", "SHM_KEY", "MODEL_MEM_SIZE_GB", "NUM_SLICES"};
 
 	for (int i = 0; i < 7; i++){ // <---------- Don't Forget
@@ -21,41 +22,44 @@ int refreshValues(config_t* cfg_ptr, int verbose){
 	}
 
 	if (verbose){
-		fprintf(stdout,"Model Mem Size GB: %d\n", MODEL_MEM_SIZE_GB);
-		fprintf(stdout,"Max number of threads: %d\n", MAX_THREAD);
-		fprintf(stdout,"Shared Memory Key: 0x%x\n", SHM_KEY);
+		fprintf(stdout,"Model Mem Size GB: %d\n", data->MODEL_MEM_SIZE_GB);
+		fprintf(stdout,"Max number of threads: %d\n", data->MAX_THREAD);
+		fprintf(stdout,"Shared Memory Key: 0x%x\n", data->SHM_KEY);
 	}
 
 	/* ALTER X_DIM Y_DIM Z_DIM */
-	if (MODEL_MEM_SIZE_GB > 0){
-		double x = (double)( ((unsigned long)MODEL_MEM_SIZE_GB) << 30);
+	if (data->MODEL_MEM_SIZE_GB > 0){
+		double x = (double)( ((unsigned long)data->MODEL_MEM_SIZE_GB) << 30);
 
-		x = x /8;
+		x = x /sizeof(struct node)*4;
 		x = cbrt(x);
 
-		X_DIM = (int) x;
-		Y_DIM = (int) x;
-		Z_DIM = (int) (x/4);
+		data->X_DIM = (int) x;
+		data->Y_DIM = (int) x;
+		data->Z_DIM = (int) (x/4);
 	}
 
 	if (verbose){
-		fprintf(stdout,"XDIM: %d\n", X_DIM);
-		fprintf(stdout,"YDIM: %d\n", Y_DIM);
-		fprintf(stdout,"ZDIM: %d\n", Z_DIM);
+		fprintf(stdout,"XDIM: %d\n", data->X_DIM);
+		fprintf(stdout,"YDIM: %d\n", data->Y_DIM);
+		fprintf(stdout,"ZDIM: %d\n", data->Z_DIM);
 	}
 
-	MICRONS_PER_SEG = ((double)MU * 2)/X_DIM;
+	data->MICRONS_PER_SEG = ((double)MU * 2)/(data->X_DIM);
 
 	if (verbose){
-		fprintf(stdout,"MICRONS PER SEG: %f\n", MICRONS_PER_SEG);
-		fprintf(stdout,"Number of Slices: %d\n", NUM_SLICES);
+		fprintf(stdout,"MICRONS PER SEG: %f\n", data->MICRONS_PER_SEG);
+		fprintf(stdout,"Number of Slices: %d\n", data->NUM_SLICES);
 	}
+
+	data->start_slice = 1;
+	data->end_slice = data->NUM_SLICES;
 
 	return 0;
 }
 
 
-void updateGlobalVariables(const char* filename, int verbose){
+void updateGlobalVariables(const char* filename, struct app_data* data, int verbose){
 
 	config_t cfg;
 	//config_setting_t *setting;
@@ -72,7 +76,7 @@ void updateGlobalVariables(const char* filename, int verbose){
 	}
 
 	/* Update global Variables*/
-	if (refreshValues(&cfg, verbose) < 0){
+	if (refreshValues(&cfg, data, verbose) < 0){
 		fprintf(stderr, "Failed to update global variables\n");
 	    config_destroy(&cfg);
 		return;

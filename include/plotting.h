@@ -1,4 +1,4 @@
 #include "globalVars.h"
 
 
-void plotData(struct node* model, int layer_num);
+void plotData(struct app_data* data, int layer_num);
